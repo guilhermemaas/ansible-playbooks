@@ -1,0 +1,53 @@
+#Comandos ad-hoc
+Executar comando diretamente nas máquinas do inventário.
+ansible -i hosts all -m ping
+#-i inventário -> all 
+#-m módulo -> ping
+
+##########
+APT 
+##########
+
+#Rodar com sudo Ad-hoc:
+ansible -i hosts ubuntu1 -m apt -a "name=cmatrix state=present" -b
+
+#Logar com x usuario:
+ansible -i hosts ubuntu2 -m apt -a "name=cmatrix state=present" -u root --become
+
+#apt update + update install:
+ansible -i hosts ubuntu1 -m apt -a "update-cache=yes name=tmux state=present" -u root --become
+
+#passar senha pro usuario:
+ansible -i hosts ubuntu1 -m apt -a "name=cmatrix state=present" -b -k
+
+
+##########
+SHELL 
+##########
+
+#shell:
+ansible -i hosts ubuntu1 -m shell -a "uptime"
+
+
+#########
+COPY
+#########
+ansible -i hosts ubuntu1 -m copy -a "src=giropops dest=/tmp"
+
+
+########
+GIT
+########
+ansible -i hosts ubuntu2 -m git -a "repo=https://github.com/badtuxx/giropops-monitoring.git dest=/home/gmaas/giropops-monitoring"
+
+
+########
+SETUP
+########
+Infos em json da maquina:
+ansible -i hosts ubuntu1 -m setup
+
+com filtro
+ansible -i hosts ubuntu1 -m setup -a "filter=ansible_os_family"
+
+
