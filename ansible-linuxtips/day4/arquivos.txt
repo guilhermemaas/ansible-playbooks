@@ -1,0 +1,201 @@
+YAML
+# cat install_k8s/roles/install-helm/tasks/main.yml
+---
+# tasks file for install-helm
+- include: install-helm.yml
+YAML
+# cat install_k8s/roles/install-helm/tasks/install-helm.yml
+---
+- name: Download helm
+  get_url:
+    url: "{{ helm_url }}"
+    dest: /tmp/get_helm.sh
+    mode: 0775
+  ignore_errors: true
+  register: download
+
+- name: Instalando Helm
+  shell:
+    /tmp/get_helm.sh
+  when:
+    - download.failed|bool == false
+  register: install_helm
+
+- name:
+  debug: var=install_helm
+YAML
+# cat install_k8s/roles/install-helm/vars/main.yml
+---
+# vars file for install-helm
+helm_url: https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3
+YAML
+#  cat install_k8s/roles/install-monit-tools/tasks/main.yml
+---
+# tasks file for install-monit-tools
+- include: install-monit-tools.yml
+YAML
+# cat install_k8s/roles/install-monit-tools/tasks/install-monit-tools.yml
+- name: helm add repo
+  shell: helm repo add stable {{ url_repo_helm }}
+  register: prometheus_add_repo
+
+- name: helm update
+  shell: helm repo update
+  register: prrometheus_repo_update
+
+- name: Instalando o Prometheus Operator
+  shell: helm install {{ deploy_prometheus }}
+  register: prometheus_install
+YAML
+# cat install_k8s/roles/install-monit-tools/vars/main.yml
+---
+# vars file for install-monit-tools
+url_repo_helm: https://kubernetes-charts.storage.googleapis.com
+deploy_prometheus: "--set prometheusOperator.createCustomResource=false meu-querido-prometheus stable/prometheus-operator"
+YAML
+#  cat install_k8s/main.yml
+- hosts: all
+  become: yes
+  user: ubuntu
+  gather_facts: no
+  pre_tasks:
+  - name: 'Atualizando o repo'
+    raw: 'apt-get update'
+  - name: 'Instalando o Python'
+    raw: 'apt-get install -y python'
+  roles:
+  - { role: install-k8s, tags: ["install_k8s_role"]  }
+
+- hosts: k8s-master
+  become: yes
+  user: ubuntu
+  roles:
+  - { role: create-cluster, tags: ["create_cluster_role"] }
+
+- hosts: k8s-workers
+  become: yes
+  user: ubuntu
+  roles:
+  - { role: join-workers, tags: ["join_workers_role"] }
+
+- hosts: k8s-master
+  become: yes
+  user: ubuntu
+  roles:
+  - { role: install-helm, tags: ["install_helm3_role"] }
+
+- hosts: k8s-master
+  become: yes
+  user: ubuntu
+  roles:
+  - { role: install-monit-tools, tags: ["install_monit_tools_role"] }
+YAML
+# cat deploy-app-v1/roles/deploy-app/tasks/main.yml
+---
+# tasks file for deploy-app
+- include: deploy-app.yml
+YAML
+# cat deploy-app-v1/roles/deploy-app/tasks/deploy-app.yml
+- name: Criando o diretorio da app Giropops
+  file: path={{item}} state=directory
+  with_items:
+    - /opt/giropops
+    - /opt/giropops/logs
+    - /opt/giropops/conf
+  register: criando_diretorios
+
+- name: Copiando o arquivo de deployment da app para o host
+  template:
+    src: app-v1.yml.j2
+    dest: /opt/giropops/app-v1.yml
+    owner: root
+    group: root
+    mode: 0644
+  register: copiando_template
+
+- name: Copiando o arquivo de service da app para o host
+  copy: src={{ item.src }} dest={{ item.dest }}
+  with_items:
+    - { src: 'service-app.yml', dest: '/opt/giropops/service-app.yml' }
+  register: copiando_service_file
+
+- name: Criando o deployment da App Giropops
+  shell: kubectl apply -f /opt/giropops/app-v1.yml
+  register: deploy_app
+
+- name: Criando o Service da App Giropops
+  shell: kubectl apply -f /opt/giropops/service-app.yml
+  register: deploy_svc_app
+YAML
+# cat deploy-app-v1/roles/deploy-app/vars/main.yml
+---
+# vars file for deploy-app
+numeros_replicas: 10
+version: 1.0.0
+prometheus_scrape: "true"
+prometheus_port: 32111
+nginx_port: 80
+YAML
+# cat deploy-app-v1/roles/deploy-app/templates/app-v1.yml.j2
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: giropops-v1
+spec:
+  replicas: {{ numeros_replicas }}
+  selector:
+    matchLabels:
+      app: giropops
+  template:
+    metadata:
+      labels:
+        app: giropops
+        version: {{ version }}
+      annotations:
+        prometheus.io/scrape: "{{ prometheus_scrape }}"
+        prometheus.io/port: "{{ prometheus_port }}"
+    spec:
+      containers:
+      - name: giropops
+        image: linuxtips/nginx-prometheus-exporter:{{ version }}
+        env:
+        - name: VERSION
+          value: {{ version }}
+        ports:
+        - containerPort: {{ nginx_port }}
+        - containerPort: {{ prometheus_port }}
+YAML
+# cat deploy-app-v1/roles/deploy-app/files/service-app.yml
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: giropops
+    run: nginx
+    track: stable
+  name: giropops
+  namespace: default
+spec:
+  externalTrafficPolicy: Cluster
+  ports:
+  - nodePort: 32222
+    name: http
+    port: 80
+    protocol: TCP
+    targetPort: 80
+  - nodePort: 32111
+    name: prometheus
+    port: 32111
+    protocol: TCP
+    targetPort: 32111
+  selector:
+    app: giropops
+  sessionAffinity: None
+  type: NodePort
+YAML
+# cat deploy-app-v1/main.yml
+- hosts: k8s-master
+  become: yes
+  user: ubuntu
+  roles:
+  - { role: deploy-app, tags: ["deploy_app_role"]  }

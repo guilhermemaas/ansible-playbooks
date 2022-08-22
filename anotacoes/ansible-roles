@@ -1,0 +1,8 @@
+#Executar roles com determinada tag
+ansible-playbook -i hosts main.yml --tags "install-helm,install_monit_tools_role"
+
+#Para skipar roles com determinada tag:
+ansible-playbook -i hosts main.yml --skip "install-helm,install_monit_tools_role
+
+#Listar as tasks que serao executadas:
+ansible-playbook -i hosts main.yml --tags "install_helm3_role,install_monit_tools_role" --list-tasks

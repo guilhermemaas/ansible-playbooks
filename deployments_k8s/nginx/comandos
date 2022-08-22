@@ -1,0 +1,30 @@
+ 9  kubectl get nodes
+   10  kubectl get pods -o wide
+   11  kubectl run nginx --image nginx
+   12  kubectl get pods
+   13  kubectl delete pods nginx
+   14  kubectl run nginx --image nginx --replicas 50
+   15  kubectl run nginx --image nginx --replicas=50
+   16  kubectl run nginx --image nginx -- replicas=50
+   17  kubectl get pods
+   18  kubectl delete pods nginx
+   19  kubectl run nginx --image nginx
+   20  kubectl get pods
+   21  kubectl scale deploy --replicas 50
+   22  kubectl get deploy
+   23  kubectl pods delete nginx
+   24  kubectl delete pods nginx
+   25  ls
+   26  vim nginx_deployment.yml
+   27  kubectl apply -f nginx_deployment.yml
+   28  vim nginx_deployment.yml
+   29  kubectl apply -f nginx_deployment.yml
+   30  kubectl get pods
+   31  kubectl delete deployment nginx-deployment-6595874d85-vzwwk
+   32  kubectl delete deployment nginx-deployment
+   33  vim nginx_deployment.yml
+   34  kubectl delete deployment nginx-deployment
+   35  kubectl apply -f nginx_deployment.yml
+   36  kubectl get pods
+   37  vim nginx_deployment.yml
+   38  history
