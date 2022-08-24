@@ -1,0 +1,17 @@
+#encrypt:
+ansible-vault encrypt roles/create-cluster/vars/main.yml
+
+#decrypt:
+ansible-vault decrypt roles/create-cluster/vars/main.yml
+
+#criando arquivo com a saida encryptada
+ansible-vault decrypt roles/create-cluster/vars/main.yml arquivo.yml
+
+#passar a senha ao rodar um playbook com arquivo encryptado:
+ansible-playbook -i hosts main.yml --ask-vault-pass
+
+#passar arquivo com a senha
+ansible-playbook -i hosts main.yml --vault-password-file arquivo_senha
+
+#Visualizar arquivos encryptados
+ansible-vault view roles/create-cluster/vars/main.yml

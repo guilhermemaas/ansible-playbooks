@@ -1,0 +1,31 @@
+#Instalacao
+
+apt install python3-pip
+pip install ansible
+pip install docker-compose docker-py
+apt install npm nodejs
+npm install npm --global
+wget https://github.com/ansible/awx/archive/17.1.0.zip
+openssl rand -hex 32
+
+root@awx:/home/ubuntu/awx/tools/docker-compose/ansible/awx-17.1.0/installer# cat inventory | grep -v "^#" | grep -v "^$"
+localhost ansible_connection=local ansible_python_interpreter="/usr/bin/env python3"
+[all:vars]
+dockerhub_base=ansible
+awx_task_hostname=awx
+awx_web_hostname=awxweb
+postgres_data_dir="/var/lib/pgdocker"
+host_port=80
+host_port_ssl=443
+docker_compose_dir="/var/lib/awx"
+pg_username=awx
+pg_password=giropops
+pg_database=awx
+pg_port=5432
+admin_user=admin
+admin_password=giropops
+create_preload_data=True
+secret_key=1df8e97b6d1078eb5a1b0ab9d360a2a54998b4c6ac965ab0b762796cee8e2678
+project_data_dir=/var/lib/awx/projects
+
+ansible-playbook -i iventory install.yml
